@@ -21,10 +21,6 @@ jest.mock("../src/services/share/shareService", () => ({
   sharePdf: jest.fn(),
 }));
 
-jest.mock("../src/services/scanner", () => ({
-  androidScannerService: {},
-}));
-
 describe("ResultScreen", () => {
   const mockRouter = {
     replace: jest.fn(),
@@ -125,7 +121,7 @@ describe("ResultScreen", () => {
     expect(state.pdfUri).toBeUndefined();
   });
 
-  it("triggers generate transition from idle state", () => {
+  it("auto-triggers generate transition from idle state", async () => {
     const { mockUpdatePdfExportState } = createSessionMock({
       pdfExportState: "idle",
       pdfUri: undefined,
@@ -133,12 +129,12 @@ describe("ResultScreen", () => {
 
     const { getByLabelText, getByText } = render(<ResultScreen />);
 
-    const shareButton = getByLabelText("Share PDF");
-    expect(shareButton).toBeDisabled();
+    expect(getByLabelText("Share PDF")).toBeDisabled();
     expect(getByText("State: idle")).toBeTruthy();
 
-    fireEvent.press(getByLabelText("Generate PDF"));
-    expect(mockUpdatePdfExportState).toHaveBeenCalledWith("generating");
+    await waitFor(() => {
+      expect(mockUpdatePdfExportState).toHaveBeenCalledWith("generating");
+    });
   });
 
   it("runs PDF generation when export state is generating", async () => {

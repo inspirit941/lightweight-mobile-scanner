@@ -1,13 +1,13 @@
-import { fireEvent, render, waitFor } from "@testing-library/react-native";
+import { fireEvent, waitFor } from "@testing-library/react-native";
 import { useRouter } from "expo-router";
 import React from "react";
 import HomeScreen from "../../app/index";
 import ResultScreen from "../../app/result";
 import ReviewScreen from "../../app/review";
-import { ScanSessionProvider } from "../../src/context/scanSessionContext";
 import { generatePdfFromScan } from "../../src/services/pdf/pdfService";
 import { androidScannerService } from "../../src/services/scanner";
 import { sharePdf } from "../../src/services/share/shareService";
+import { renderWithScanSession } from "../../src/test-utils/scanSession";
 
 jest.mock("react-native/Libraries/Animated/NativeAnimatedHelper", () => ({}), {
   virtual: true,
@@ -34,15 +34,11 @@ jest.mock("../../src/services/share/shareService", () => ({
 
 function FlowHarness() {
   return React.createElement(
-    ScanSessionProvider,
+    React.Fragment,
     null,
-    React.createElement(
-      React.Fragment,
-      null,
-      React.createElement(HomeScreen),
-      React.createElement(ReviewScreen),
-      React.createElement(ResultScreen),
-    ),
+    React.createElement(HomeScreen),
+    React.createElement(ReviewScreen),
+    React.createElement(ResultScreen),
   );
 }
 
@@ -81,7 +77,7 @@ describe("scan flow integration", () => {
 
     (androidScannerService.scan as jest.Mock).mockResolvedValue(scanResult);
 
-    const utils = render(React.createElement(FlowHarness));
+    const utils = renderWithScanSession(React.createElement(FlowHarness));
 
     fireEvent.press(utils.getByText("Scan Document"));
 

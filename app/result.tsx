@@ -1,10 +1,16 @@
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+import { ActionButton } from "../src/components/ActionButton";
+import { EmptyState } from "../src/components/EmptyState";
+import { InfoSection } from "../src/components/InfoSection";
+import { PreviewCard } from "../src/components/PreviewCard";
+import { StatusMessage } from "../src/components/StatusMessage";
 import { useScanSession } from "../src/hooks/useScanSession";
 import { generatePdfFromScan } from "../src/services/pdf/pdfService";
-import { androidScannerService } from "../src/services/scanner";
 import { sharePdf } from "../src/services/share/shareService";
+import { Colors } from "../src/theme/colors";
+import { Layout } from "../src/theme/layout";
 
 export default function ResultScreen() {
   const router = useRouter();
@@ -16,7 +22,7 @@ export default function ResultScreen() {
     updatePdfExportState,
     setPdfUri,
     resetSession,
-  } = useScanSession(androidScannerService);
+  } = useScanSession();
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   const scanPage = scanResult?.status === "success" ? scanResult.page : undefined;
@@ -37,7 +43,16 @@ export default function ResultScreen() {
   }, [scanPage?.metadata]);
 
   useEffect(() => {
-    if (pdfExportState !== "generating" || !scanPage) {
+    if (!scanPage) {
+      return;
+    }
+
+    if (pdfExportState === "idle") {
+      updatePdfExportState("generating");
+      return;
+    }
+
+    if (pdfExportState !== "generating") {
       return;
     }
 
@@ -104,128 +119,85 @@ export default function ResultScreen() {
 
   if (!scanPage) {
     return (
-      <View style={styles.container}>
-        <View style={styles.emptyStateContainer}>
-          <Text style={styles.emptyText}>No scan result found.</Text>
-          <Text style={styles.emptySubtext}>Please scan a document to continue.</Text>
-          <TouchableOpacity
-            style={styles.secondaryButton}
+      <View style={Layout.screen}>
+        <EmptyState
+          title="No scan result found."
+          message="Please scan a document to continue."
+        >
+          <ActionButton
+            label="Start Over"
+            variant="secondary"
             onPress={handleStartOver}
-            accessibilityRole="button"
             accessibilityLabel="Start over"
-          >
-            <Text style={styles.secondaryButtonText}>Start Over</Text>
-          </TouchableOpacity>
-        </View>
+          />
+        </EmptyState>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.previewContainer}>
-        <View style={styles.previewContent}>
-          <Text style={styles.previewTitle}>Scan Preview</Text>
-          <Text style={styles.presetLabel}>Preset: {preset}</Text>
-          <Text style={styles.uriText} numberOfLines={1} ellipsizeMode="middle">
-            {scanPage.uri}
-          </Text>
-          <View style={styles.metadataList}>
-            {metadataRows.map((row) => (
-              <Text key={row} style={styles.metadataText}>
-                {row}
-              </Text>
-            ))}
-          </View>
+    <View style={Layout.screen}>
+      <PreviewCard title="Scan Preview">
+        <Text style={styles.presetLabel}>Preset: {preset}</Text>
+        <Text style={styles.uriText} numberOfLines={1} ellipsizeMode="middle">
+          {scanPage.uri}
+        </Text>
+        <View style={styles.metadataList}>
+          {metadataRows.map((row) => (
+            <Text key={row} style={styles.metadataText}>
+              {row}
+            </Text>
+          ))}
         </View>
-      </View>
+      </PreviewCard>
 
-      <View style={styles.statusSection}>
-        <Text style={styles.sectionTitle}>PDF Status</Text>
-        <Text style={styles.statusText}>State: {pdfExportState}</Text>
-        {pdfUri ? (
-          <Text style={styles.uriText} numberOfLines={1} ellipsizeMode="middle">
-            {pdfUri}
-          </Text>
-        ) : null}
-        {actionMessage ? (
-          <Text
-            style={[
-              styles.statusText,
-              pdfExportState === "error" && styles.errorText,
-            ]}
-          >
-            {actionMessage}
-          </Text>
-        ) : null}
-      </View>
+      <InfoSection title="PDF Status">
+        <View style={styles.statusContent}>
+          <StatusMessage>State: {pdfExportState}</StatusMessage>
+          {pdfUri ? (
+            <Text style={styles.uriText} numberOfLines={1} ellipsizeMode="middle">
+              {pdfUri}
+            </Text>
+          ) : null}
+          {actionMessage ? (
+            <StatusMessage variant={pdfExportState === "error" ? "error" : "neutral"}>
+              {actionMessage}
+            </StatusMessage>
+          ) : null}
+        </View>
+      </InfoSection>
 
-      <View style={styles.footer}>
-        <TouchableOpacity
-          style={[styles.primaryButton, !canGenerate && styles.disabledButton]}
+      <View style={[Layout.footer, styles.footer]}>
+        <ActionButton
+          label="Generate PDF"
           onPress={handleGenerate}
           disabled={!canGenerate}
-          accessibilityRole="button"
-          accessibilityLabel="Generate PDF"
-        >
-          <Text style={styles.primaryButtonText}>Generate PDF</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.primaryButton, !canShare && styles.disabledButton]}
+        />
+        <ActionButton
+          label="Share PDF"
           onPress={handleShare}
           disabled={!canShare}
-          accessibilityRole="button"
-          accessibilityLabel="Share PDF"
-        >
-          <Text style={styles.primaryButtonText}>Share PDF</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.secondaryButton}
+        />
+        <ActionButton
+          label="Start Over"
+          variant="secondary"
           onPress={handleStartOver}
-          accessibilityRole="button"
           accessibilityLabel="Start over"
-        >
-          <Text style={styles.secondaryButtonText}>Start Over</Text>
-        </TouchableOpacity>
+        />
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: "#FFFFFF",
-  },
-  previewContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#F2F2F7",
-    borderRadius: 12,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: "#E5E5EA",
-  },
-  previewContent: {
-    alignItems: "center",
-    padding: 20,
-  },
-  previewTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#1A1A1A",
-    marginBottom: 8,
-  },
   presetLabel: {
     fontSize: 14,
-    color: "#666",
+    color: Colors.textSecondary,
     marginBottom: 8,
   },
   uriText: {
     fontSize: 12,
-    color: "#8E8E93",
+    color: Colors.textCaption,
     maxWidth: "80%",
     textAlign: "center",
   },
@@ -236,74 +208,12 @@ const styles = StyleSheet.create({
   },
   metadataText: {
     fontSize: 12,
-    color: "#666",
+    color: Colors.textSecondary,
   },
-  statusSection: {
-    marginBottom: 24,
+  statusContent: {
     gap: 6,
   },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1A1A1A",
-  },
-  statusText: {
-    fontSize: 14,
-    color: "#666",
-  },
-  errorText: {
-    color: "#FF3B30",
-  },
   footer: {
-    paddingBottom: 10,
     gap: 12,
-  },
-  primaryButton: {
-    backgroundColor: "#007AFF",
-    paddingVertical: 16,
-    borderRadius: 8,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  primaryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  secondaryButton: {
-    backgroundColor: "#F2F2F7",
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#E5E5EA",
-  },
-  secondaryButtonText: {
-    color: "#1C1C1E",
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  disabledButton: {
-    opacity: 0.5,
-  },
-  emptyStateContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 12,
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#1A1A1A",
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: "#666",
-    textAlign: "center",
   },
 });
