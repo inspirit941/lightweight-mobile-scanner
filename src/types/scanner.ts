@@ -9,6 +9,12 @@
  */
 export type ScanStatus = "success" | "cancel" | "error";
 
+export const SCAN_PRESETS = ["Original", "B&W Scan"] as const;
+
+export type ScanPreset = (typeof SCAN_PRESETS)[number];
+
+export const DEFAULT_PRESET: ScanPreset = "Original";
+
 /**
  * Represents a single scanned page with corrected image data.
  * V1 is single-page only, so this type represents the complete scan result.
@@ -40,12 +46,6 @@ export type ScanResult = {
     details?: unknown;
   };
 };
-
-/**
- * Scan preset options for post-scan enhancement.
- * V1 supports exactly two presets.
- */
-export type ScanPreset = "Original" | "B&W Scan";
 
 /**
  * State of PDF export operation.

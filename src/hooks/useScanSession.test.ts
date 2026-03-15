@@ -1,20 +1,16 @@
-import { renderHook, act } from "@testing-library/react-native";
+import { act } from "@testing-library/react-native";
+import { renderHookWithScanSession } from "../test-utils/scanSession";
 import { useScanSession } from "./useScanSession";
-import type { ScanResult } from "../types/scanner";
+import type { PdfExportState, ScanResult } from "../types/scanner";
 
 describe("useScanSession", () => {
-  const mockScannerService = {
-    scan: jest.fn(),
-    isAvailable: jest.fn(),
-  };
-
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   describe("initial state", () => {
     it("initializes with default preset and idle PDF state", () => {
-      const { result } = renderHook(() => useScanSession(mockScannerService));
+      const { result } = renderHookWithScanSession(() => useScanSession());
 
       expect(result.current.preset).toBe("Original");
       expect(result.current.pdfExportState).toBe("idle");
@@ -25,7 +21,7 @@ describe("useScanSession", () => {
 
   describe("updateScanResult", () => {
     it("stores scan result and resets PDF state", () => {
-      const { result } = renderHook(() => useScanSession(mockScannerService));
+      const { result } = renderHookWithScanSession(() => useScanSession());
 
       const mockResult: ScanResult = {
         status: "success",
@@ -45,7 +41,7 @@ describe("useScanSession", () => {
     });
 
     it("stores cancel result without page", () => {
-      const { result } = renderHook(() => useScanSession(mockScannerService));
+      const { result } = renderHookWithScanSession(() => useScanSession());
 
       const mockResult: ScanResult = {
         status: "cancel",
@@ -60,7 +56,7 @@ describe("useScanSession", () => {
     });
 
     it("stores error result with error metadata", () => {
-      const { result } = renderHook(() => useScanSession(mockScannerService));
+      const { result } = renderHookWithScanSession(() => useScanSession());
 
       const mockResult: ScanResult = {
         status: "error",
@@ -81,7 +77,7 @@ describe("useScanSession", () => {
 
   describe("updatePreset", () => {
     it("updates the selected preset", () => {
-      const { result } = renderHook(() => useScanSession(mockScannerService));
+      const { result } = renderHookWithScanSession(() => useScanSession());
 
       act(() => {
         result.current.updatePreset("B&W Scan");
@@ -91,7 +87,7 @@ describe("useScanSession", () => {
     });
 
     it("accepts only valid preset values", () => {
-      const { result } = renderHook(() => useScanSession(mockScannerService));
+      const { result } = renderHookWithScanSession(() => useScanSession());
 
       act(() => {
         result.current.updatePreset("Original");
@@ -106,23 +102,24 @@ describe("useScanSession", () => {
       expect(result.current.preset).toBe("B&W Scan");
     });
 
-    it("accepts all valid PDF export states", () => {
-      const { result } = renderHook(() => useScanSession(mockScannerService));
+    it("resets pdf export state and uri when preset changes", () => {
+      const { result } = renderHookWithScanSession(() => useScanSession());
 
-      const states: string[] = ["idle", "generating", "ready", "error"];
-
-      states.forEach((state) => {
-        act(() => {
-          result.current.updatePdfExportState(state as any);
-        });
-        expect(result.current.pdfExportState).toBe(state);
+      act(() => {
+        result.current.updatePdfExportState("ready");
+        result.current.setPdfUri("file:///documents/scan.pdf");
+        result.current.updatePreset("B&W Scan");
       });
+
+      expect(result.current.preset).toBe("B&W Scan");
+      expect(result.current.pdfExportState).toBe("idle");
+      expect(result.current.pdfUri).toBeUndefined();
     });
   });
 
   describe("updatePdfExportState", () => {
     it("updates PDF export state", () => {
-      const { result } = renderHook(() => useScanSession(mockScannerService));
+      const { result } = renderHookWithScanSession(() => useScanSession());
 
       act(() => {
         result.current.updatePdfExportState("generating");
@@ -138,9 +135,9 @@ describe("useScanSession", () => {
     });
 
     it("accepts all valid PDF export states", () => {
-      const { result } = renderHook(() => useScanSession(mockScannerService));
+      const { result } = renderHookWithScanSession(() => useScanSession());
 
-      const states: ("idle" | "generating" | "ready" | "error")[] = [
+      const states: PdfExportState[] = [
         "idle",
         "generating",
         "ready",
@@ -158,7 +155,7 @@ describe("useScanSession", () => {
 
   describe("setPdfUri", () => {
     it("sets the PDF URI when ready", () => {
-      const { result } = renderHook(() => useScanSession(mockScannerService));
+      const { result } = renderHookWithScanSession(() => useScanSession());
 
       const mockUri = "file:///documents/scan.pdf";
 
@@ -170,7 +167,7 @@ describe("useScanSession", () => {
     });
 
     it("clears PDF URI when undefined is passed", () => {
-      const { result } = renderHook(() => useScanSession(mockScannerService));
+      const { result } = renderHookWithScanSession(() => useScanSession());
 
       act(() => {
         result.current.setPdfUri("file:///documents/scan.pdf");
@@ -188,7 +185,7 @@ describe("useScanSession", () => {
 
   describe("resetSession", () => {
     it("resets session to initial state", () => {
-      const { result } = renderHook(() => useScanSession(mockScannerService));
+      const { result } = renderHookWithScanSession(() => useScanSession());
 
       act(() => {
         result.current.updateScanResult({
@@ -218,7 +215,7 @@ describe("useScanSession", () => {
 
   describe("stores only one active scan page", () => {
     it("replaces existing page with new scan", () => {
-      const { result } = renderHook(() => useScanSession(mockScannerService));
+      const { result } = renderHookWithScanSession(() => useScanSession());
 
       const firstScan: ScanResult = {
         status: "success",
@@ -245,7 +242,7 @@ describe("useScanSession", () => {
     });
 
     it("does not append multiple pages", () => {
-      const { result } = renderHook(() => useScanSession(mockScannerService));
+      const { result } = renderHookWithScanSession(() => useScanSession());
 
       act(() => {
         result.current.updateScanResult({

@@ -1,5 +1,11 @@
 import { createContext, type ReactNode, useContext, useRef } from "react";
-import type { PdfExportState, ScanPreset, ScanResult, ScanSession } from "../types/scanner";
+import {
+  DEFAULT_PRESET,
+  type PdfExportState,
+  type ScanPreset,
+  type ScanResult,
+  type ScanSession,
+} from "../types/scanner";
 
 type ScanSessionStore = {
   getState: () => ScanSession;
@@ -12,8 +18,14 @@ type ScanSessionStore = {
 };
 
 const createDefaultSession = (): ScanSession => ({
-  preset: "Original",
+  preset: DEFAULT_PRESET,
   pdfExportState: "idle",
+});
+
+const resetPdfState = (session: ScanSession): ScanSession => ({
+  ...session,
+  pdfExportState: "idle",
+  pdfUri: undefined,
 });
 
 const createScanSessionStore = (): ScanSessionStore => {
@@ -41,14 +53,15 @@ const createScanSessionStore = (): ScanSessionStore => {
     },
     updateScanResult: (result) => {
       setState((prev) => ({
-        ...prev,
+        ...resetPdfState(prev),
         scanResult: result,
-        pdfExportState: "idle",
-        pdfUri: undefined,
       }));
     },
     updatePreset: (preset) => {
-      setState((prev) => ({ ...prev, preset }));
+      setState((prev) => ({
+        ...resetPdfState(prev),
+        preset,
+      }));
     },
     updatePdfExportState: (stateValue) => {
       setState((prev) => ({ ...prev, pdfExportState: stateValue }));
@@ -62,7 +75,6 @@ const createScanSessionStore = (): ScanSessionStore => {
   };
 };
 
-const defaultScanSessionStore = createScanSessionStore();
 const ScanSessionStoreContext = createContext<ScanSessionStore | null>(null);
 
 export function ScanSessionProvider({ children }: { children: ReactNode }) {
@@ -80,5 +92,11 @@ export function ScanSessionProvider({ children }: { children: ReactNode }) {
 }
 
 export function useScanSessionStore() {
-  return useContext(ScanSessionStoreContext) ?? defaultScanSessionStore;
+  const store = useContext(ScanSessionStoreContext);
+
+  if (!store) {
+    throw new Error("useScanSessionStore must be used within a ScanSessionProvider");
+  }
+
+  return store;
 }
