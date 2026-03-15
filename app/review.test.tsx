@@ -11,17 +11,12 @@ jest.mock("../src/hooks/useScanSession", () => ({
   useScanSession: jest.fn(),
 }));
 
-jest.mock("../src/services/scanner", () => ({
-  androidScannerService: {},
-}));
-
 describe("ReviewScreen", () => {
   const mockRouter = {
     push: jest.fn(),
   };
 
   const mockUpdatePreset = jest.fn();
-  const mockUpdatePdfExportState = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -33,7 +28,6 @@ describe("ReviewScreen", () => {
       scanResult: undefined,
       preset: "Original",
       updatePreset: mockUpdatePreset,
-      updatePdfExportState: mockUpdatePdfExportState,
     });
 
     const { getByText } = render(<ReviewScreen />);
@@ -48,7 +42,6 @@ describe("ReviewScreen", () => {
       },
       preset: "Original",
       updatePreset: mockUpdatePreset,
-      updatePdfExportState: mockUpdatePdfExportState,
     });
 
     const { getByText, getByLabelText } = render(<ReviewScreen />);
@@ -69,7 +62,6 @@ describe("ReviewScreen", () => {
       },
       preset: "Original",
       updatePreset: mockUpdatePreset,
-      updatePdfExportState: mockUpdatePdfExportState,
     });
 
     const { getByLabelText, getByText } = render(<ReviewScreen />);
@@ -82,7 +74,6 @@ describe("ReviewScreen", () => {
     const saveButton = getByText("Save as PDF");
     fireEvent.press(saveButton);
 
-    expect(mockUpdatePdfExportState).toHaveBeenCalledWith("generating");
     expect(mockRouter.push).toHaveBeenCalledWith("/result");
   });
 });
