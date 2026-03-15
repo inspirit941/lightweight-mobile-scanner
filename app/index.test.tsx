@@ -1,7 +1,8 @@
-import { render, fireEvent, waitFor } from "@testing-library/react-native";
-import HomeScreen from "./index";
+import { fireEvent, waitFor } from "@testing-library/react-native";
 import { useRouter } from "expo-router";
 import { androidScannerService } from "../src/services/scanner";
+import { renderWithScanSession } from "../src/test-utils/scanSession";
+import HomeScreen from "./index";
 
 jest.mock("expo-router", () => ({
   useRouter: jest.fn(),
@@ -18,6 +19,10 @@ const mockRouter = {
   push: jest.fn(),
 };
 
+function renderHomeScreen() {
+  return renderWithScanSession(<HomeScreen />);
+}
+
 describe("HomeScreen", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -25,7 +30,7 @@ describe("HomeScreen", () => {
   });
 
   it("renders the primary scan button", () => {
-    const { getByText } = render(<HomeScreen />);
+    const { getByText } = renderHomeScreen();
     expect(getByText("Scan Document")).toBeTruthy();
   });
 
@@ -35,7 +40,7 @@ describe("HomeScreen", () => {
       page: { uri: "file:///test.jpg" },
     });
 
-    const { getByText } = render(<HomeScreen />);
+    const { getByText } = renderHomeScreen();
     const button = getByText("Scan Document");
 
     fireEvent.press(button);
@@ -51,7 +56,7 @@ describe("HomeScreen", () => {
       status: "cancel",
     });
 
-    const { getByText } = render(<HomeScreen />);
+    const { getByText } = renderHomeScreen();
     const button = getByText("Scan Document");
 
     fireEvent.press(button);

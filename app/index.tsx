@@ -1,11 +1,15 @@
 import { useRouter } from "expo-router";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+import { ActionButton } from "../src/components/ActionButton";
+import { StatusMessage } from "../src/components/StatusMessage";
 import { useScanSession } from "../src/hooks/useScanSession";
 import { androidScannerService } from "../src/services/scanner";
+import { Colors } from "../src/theme/colors";
+import { Layout } from "../src/theme/layout";
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { updateScanResult, scanResult } = useScanSession(androidScannerService);
+  const { updateScanResult, scanResult } = useScanSession();
 
   const handleScan = async () => {
     const result = await androidScannerService.scan();
@@ -17,21 +21,23 @@ export default function HomeScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[Layout.screen, styles.container]}>
       <Text style={styles.title}>Lightweight Mobile Scanner</Text>
       
-      <TouchableOpacity style={styles.button} onPress={handleScan}>
-        <Text style={styles.buttonText}>Scan Document</Text>
-      </TouchableOpacity>
+      <ActionButton
+        label="Scan Document"
+        onPress={handleScan}
+        style={styles.actionButton}
+      />
 
       {scanResult?.status === "cancel" && (
-        <Text style={styles.statusText}>Scan cancelled</Text>
+        <StatusMessage style={styles.statusLayout}>Scan cancelled</StatusMessage>
       )}
 
       {scanResult?.status === "error" && (
-        <Text style={[styles.statusText, styles.errorText]}>
+        <StatusMessage variant="error" style={styles.statusLayout}>
           {scanResult.error?.message || "Scanner error"}
-        </Text>
+        </StatusMessage>
       )}
     </View>
   );
@@ -39,41 +45,20 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    padding: 20,
-    backgroundColor: "#FFFFFF",
   },
   title: {
     fontSize: 24,
     fontWeight: "bold",
     marginBottom: 40,
-    color: "#1A1A1A",
+    color: Colors.text,
   },
-  button: {
-    backgroundColor: "#007AFF",
+  actionButton: {
     paddingHorizontal: 32,
-    paddingVertical: 16,
-    borderRadius: 8,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
   },
-  buttonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  statusText: {
+  statusLayout: {
     marginTop: 20,
-    fontSize: 14,
-    color: "#666",
     textAlign: "center",
-  },
-  errorText: {
-    color: "#FF3B30",
   },
 });
