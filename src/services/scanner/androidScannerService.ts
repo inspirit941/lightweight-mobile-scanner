@@ -133,7 +133,3 @@ export const androidScannerService: ScannerService = {
     }
   },
 };
-
-export const defaultScannerService = androidScannerService;
-
-export default androidScannerService;
